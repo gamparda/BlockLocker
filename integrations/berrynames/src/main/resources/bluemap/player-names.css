@@ -1,0 +1,4 @@
+/* Hangul may wrap between every character inside BlueMap's narrow player marker. */
+#map-container .bm-marker-player .bm-player-name {
+    white-space: nowrap;
+}

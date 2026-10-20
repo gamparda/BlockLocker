@@ -1,17 +1,27 @@
 package kr.berrynames.integrations;
 
 import de.bluecolored.bluemap.api.BlueMapAPI;
+import de.bluecolored.bluemap.api.WebApp;
 import de.bluecolored.bluemap.api.plugin.PlayerDisplayNameProvider;
 import kr.berrynames.api.BerryNamesApi;
 import nl.rutgerkok.blocklocker.PlayerNameProvider;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class IntegrationProvidersTest {
+    @TempDir Path webRoot;
     private final UUID first = UUID.randomUUID(), second = UUID.randomUUID();
+    private BlueMapAPI blueMap(de.bluecolored.bluemap.api.plugin.Plugin plugin) {
+        var webApp = mock(WebApp.class); when(webApp.getWebRoot()).thenReturn(webRoot);
+        var api = mock(BlueMapAPI.class); when(api.getPlugin()).thenReturn(plugin); when(api.getWebApp()).thenReturn(webApp);
+        return api;
+    }
     private BerryNamesApi names(AtomicReference<String> name) {
         return new BerryNamesApi() {
             public Optional<Identity> find(UUID uuid) { return identities().stream().filter(entry -> entry.uuid().equals(uuid)).findFirst(); }
@@ -34,7 +44,7 @@ class IntegrationProvidersTest {
         assertEquals(first, provider.resolve("베리일").orElseThrow().uuid());
         api.set(null); assertTrue(provider.find(first).isEmpty()); assertTrue(provider.identities().isEmpty());
     }
-    @Test void blueMapUsesCurrentNameAndRestoresPreviousProvider() {
+    @Test void blueMapUsesCurrentNameAndRestoresPreviousProvider() throws Exception {
         var current = new AtomicReference<>("베리일");
         var service = new AtomicReference<>(names(current));
         var plugin = mock(de.bluecolored.bluemap.api.plugin.Plugin.class);
@@ -42,9 +52,11 @@ class IntegrationProvidersTest {
         PlayerDisplayNameProvider original = installed.get();
         when(plugin.getPlayerDisplayNameProvider()).thenAnswer(invocation -> installed.get());
         doAnswer(invocation -> { installed.set(invocation.getArgument(0)); return null; }).when(plugin).setPlayerDisplayNameProvider(any());
-        var api = mock(BlueMapAPI.class); when(api.getPlugin()).thenReturn(plugin);
-        var hook = new BlueMapHook(service::get);
+        var api = blueMap(plugin);
+        var hook = new BlueMapHook(service::get, error -> fail(error));
         hook.attach(api);
+        verify(api.getWebApp()).registerStyle(BlueMapStyle.URL);
+        assertTrue(Files.readString(webRoot.resolve(BlueMapStyle.URL)).contains("white-space: nowrap"));
         assertEquals("베리일", installed.get().get(first));
         current.set("새대장"); assertEquals("새대장", installed.get().get(first));
         assertEquals("original", installed.get().get(UUID.randomUUID()));
@@ -56,11 +68,28 @@ class IntegrationProvidersTest {
         var state = new AtomicReference<PlayerDisplayNameProvider>(uuid -> "original");
         when(plugin.getPlayerDisplayNameProvider()).thenAnswer(invocation -> state.get());
         doAnswer(invocation -> { state.set(invocation.getArgument(0)); return null; }).when(plugin).setPlayerDisplayNameProvider(any());
-        var api = mock(BlueMapAPI.class); when(api.getPlugin()).thenReturn(plugin);
-        var hook = new BlueMapHook(() -> names(new AtomicReference<>("베리일")));
+        var api = blueMap(plugin);
+        var hook = new BlueMapHook(() -> names(new AtomicReference<>("베리일")), error -> fail(error));
         hook.attach(api); hook.detach(api); assertEquals("original", state.get().get(first));
         hook.attach(api); assertEquals("베리일", state.get().get(first));
         PlayerDisplayNameProvider another = uuid -> "other-addon"; state.set(another);
         hook.close(); assertSame(another, state.get());
+    }
+    @Test void blueMapStillInstallsNamesWhenWebRootCannotBeWritten() throws Exception {
+        var plugin = mock(de.bluecolored.bluemap.api.plugin.Plugin.class);
+        when(plugin.getPlayerDisplayNameProvider()).thenReturn(uuid -> "original");
+        var api = blueMap(plugin);
+        var blockedRoot = Files.writeString(webRoot.resolve("file-instead-of-directory"), "existing content");
+        when(api.getWebApp().getWebRoot()).thenReturn(blockedRoot);
+        var failure = new AtomicReference<Exception>();
+        try (var hook = new BlueMapHook(() -> names(new AtomicReference<>("베리일")), failure::set)) {
+            hook.attach(api);
+            assertInstanceOf(java.io.IOException.class, failure.get());
+            verify(api.getWebApp(), never()).registerStyle(anyString());
+            var provider = org.mockito.ArgumentCaptor.forClass(PlayerDisplayNameProvider.class);
+            verify(plugin).setPlayerDisplayNameProvider(provider.capture());
+            assertEquals("베리일", provider.getValue().get(first));
+            assertEquals("existing content", Files.readString(blockedRoot));
+        }
     }
 }

@@ -17,7 +17,8 @@ public final class BerryIntegrationsPlugin extends JavaPlugin {
         }
         if (getConfig().getBoolean("bluemap.enabled", true) && getServer().getPluginManager().isPluginEnabled("BlueMap")) {
             try {
-                hooks.add(new BlueMapHook(() -> getServer().getServicesManager().load(BerryNamesApi.class)));
+                hooks.add(new BlueMapHook(() -> getServer().getServicesManager().load(BerryNamesApi.class),
+                        e -> getLogger().log(Level.WARNING, "BlueMap 이름표 스타일 적용 실패. 웹 루트 쓰기 권한을 확인하세요.", e)));
                 getLogger().info("BlueMap 이름 표시 연동 등록 완료.");
             } catch (LinkageError | RuntimeException e) { getLogger().log(Level.SEVERE, "BlueMap 이름 API 연동 실패. BlueMap 5.29에서 검증한 API가 필요합니다.", e); }
         }

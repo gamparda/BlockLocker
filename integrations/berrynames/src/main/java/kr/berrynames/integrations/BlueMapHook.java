@@ -3,25 +3,30 @@ package kr.berrynames.integrations;
 import de.bluecolored.bluemap.api.BlueMapAPI;
 import de.bluecolored.bluemap.api.plugin.PlayerDisplayNameProvider;
 import kr.berrynames.api.BerryNamesApi;
+import java.io.IOException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 final class BlueMapHook implements AutoCloseable {
     private final Supplier<BerryNamesApi> names;
+    private final Consumer<Exception> styleFailure;
     private final Consumer<BlueMapAPI> enabled = this::attach;
     private final Consumer<BlueMapAPI> disabled = this::detach;
     private de.bluecolored.bluemap.api.plugin.Plugin target;
     private PlayerDisplayNameProvider previous, installed;
     private boolean closed;
 
-    BlueMapHook(Supplier<BerryNamesApi> names) {
+    BlueMapHook(Supplier<BerryNamesApi> names, Consumer<Exception> styleFailure) {
         this.names = names;
+        this.styleFailure = styleFailure;
         BlueMapAPI.onEnable(enabled);
         BlueMapAPI.onDisable(disabled);
     }
     synchronized void attach(BlueMapAPI api) {
         if (closed || target == api.getPlugin()) return;
         restore();
+        try { BlueMapStyle.install(api.getWebApp()); }
+        catch (IOException | RuntimeException e) { styleFailure.accept(e); }
         var plugin = api.getPlugin();
         var fallback = plugin.getPlayerDisplayNameProvider();
         PlayerDisplayNameProvider provider = uuid -> {
