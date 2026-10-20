@@ -1,0 +1,5 @@
+name: BerryCoreHarness
+version: 1.0
+main: verification.CoreHarness
+api-version: '26.3'
+depend: [BerryNames, CoreProtect, BerryIntegrations]

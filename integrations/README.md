@@ -1,12 +1,12 @@
 # BerryNames integration
 
-`berrynames/` builds **BerryIntegrations 1.0.1**, an optional Paper plugin integrating
-BerryNames 1.3.0+ with BlueMap 5.29 and this BlockLocker fork.
+`berrynames/` builds **BerryIntegrations 1.1.0**, an optional Paper plugin integrating
+BerryNames 1.3.0+ with BlueMap 5.29, this BlockLocker fork, and CoreProtect 24.1.
 
 The addon and the BerryNames API contract in `berrynames-api/` are GPLv3; each module
 contains its license. The main BlockLocker plugin retains its MIT license and has
 no dependency on BerryNames or BlueMap. The contract matches BerryNames 1.3.0's
-`kr.berrynames.api.BerryNamesApi`. It is a provided compile-time dependency and is
+`kr.berrynames.api.BerryNamesApi` and `AliasAwareCommands`. It is a provided compile-time dependency and is
 not included in the addon JAR. At runtime, BerryNames supplies the API class and service.
 
 ## Build
@@ -21,13 +21,14 @@ mvn -B -ntp -f integrations/pom.xml verify
 Install these plugin JARs, retaining their existing data folders:
 
 - `target/blocklocker-1.15.1-berry.1.jar`
-- `integrations/berrynames/target/BerryIntegrations-1.0.1.jar`
+- `integrations/berrynames/target/BerryIntegrations-1.1.0.jar`
 - BerryNames 1.3.0+ and its PacketEvents dependency
 - BlueMap 5.29 when using the map integration
+- The existing CoreProtect 24.1 JAR when using its command integration
 
 **Do not install `BerryNames-api-1.3.0.jar` in plugins.** It is only the build-time contract.
-BlueMap and BlockLocker are optional for the addon; either can be used independently.
-`plugins/BerryIntegrations/config.yml` can disable either hook before a server restart.
+BlueMap, BlockLocker and CoreProtect are optional; each can be used independently.
+`plugins/BerryIntegrations/config.yml` can disable each hook before a server restart.
 
 ## Behavior
 
@@ -58,14 +59,70 @@ BlueMap and BlockLocker are optional for the addon; either can be used independe
   BlueMap API reloads. Plugin hot swapping is not an installation workflow.
 
 The addon uses public APIs. It does not patch BlueMap, change UUIDs, write BerryNames
-data, or modify CoreProtect.
+data, or modify CoreProtect's JAR or database.
 
-To update from 1.0.0, replace only the BerryIntegrations JAR while the server is stopped,
+To update from 1.0.x, replace only the BerryIntegrations JAR while the server is stopped,
 restart it, then hard-refresh the map page (Ctrl+F5). No map rerender is needed.
 The generated stylesheet can remain when disabling the addon; it only prevents
 player-name wrapping. BlueMap's API has no style-unregister method.
 
+## CoreProtect commands
+
+The addon wraps the Bukkit executors/completers of CoreProtect's own `co`, `core` and
+`coreprotect` commands. Namespaced labels work through the same PluginCommands.
+No CoreProtect classes are linked or bundled; the proprietary/local plugin remains
+unchanged. Execution uses the original sender, native permissions, native filtering,
+preview, pagination, rollback/restore processing and defaults.
+
+Current display names, stable Berry names, `#number`, and known UUIDs are translated
+to the actual account name for `lookup/l`, `rollback/rb/ro`, and `restore/rs/re`.
+User prefixes `u:`, `user:`, `users:`, `p:`, comma lists, continued lists and native bare
+user arguments are supported. `e:`/`exclude:` user exclusions are translated too,
+including exclusions in `purge`. Native material/entity exclusions and other filters
+remain intact. Native tab suggestions are retained and Berry names are added only in
+user positions with the corresponding command permission.
+
+```text
+/co lookup u:베리일 t:1h r:10
+/co rollback u:베리일 t:1h r:10 #preview
+/co restore u:베리일 t:1h r:10
+/co lookup u:베리일,베리이 e:베리이 t:1h r:10
+```
+
+The native command format targets account names. Duplicate stored account names or
+ambiguous aliases are rejected instead of choosing a UUID arbitrarily. An exclusion
+is rejected if its translated account collides with a native material/entity name.
+Renames are read live from BerryNames; the addon never rewrites existing CoreProtect
+records. Existing native account arguments continue to work.
+
+**Output scope:** native lookup rows and `/co inspect` still show CoreProtect's actual
+account names. There is no documented display-name provider in the installed 24.1
+API. Before an alias command, the addon shows `베리일 → ActualAccount`, keeping the
+native result and the selected Berry identity understandable. It does not replace
+inspection output, historical chat/command contents, or name-change history.
+
+```yaml
+coreprotect:
+  enabled: true
+  show-mapping: true
+```
+
+These defaults apply when an existing addon config lacks this section. Set
+`show-mapping: false` to suppress the mapping line. Disable/re-enable restores command
+handlers only when the addon still owns them; normal installation requires a full
+server restart. CoreProtect's own `/co reload` retains the wrapper.
+
 ## Validation
+
+Java 25: 17 addon tests passed for 1.1.0. New cases cover native user grammar,
+unchanged non-user filters, UUIDs/renames, duplicate identities, material collisions,
+permission delegation, completion and handler restoration. Paper 26.3 build 201
+tests use the user's unchanged CoreProtect 24.1 JAR (API v12), a fresh local SQLite
+database, native Bukkit PluginCommands, original CoreProtect processing and actual
+Paper world blocks. Test senders are capturing proxies, not real client connections.
+The combined server run passed 34 checks and the full-restart run passed 8 checks.
+The native test fixture and setup instructions are in
+`berrynames/validation/coreprotect/`; obtain CoreProtect separately to run it.
 
 Java 25: 5 addon tests passed for 1.0.1, including stylesheet registration and a failed
 web-root write retaining name resolution. On Paper 26.3 build 201 / BlueMap 5.29,

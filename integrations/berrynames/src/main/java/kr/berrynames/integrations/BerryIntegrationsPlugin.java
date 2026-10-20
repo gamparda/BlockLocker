@@ -1,6 +1,8 @@
 package kr.berrynames.integrations;
 
 import kr.berrynames.api.BerryNamesApi;
+import kr.berrynames.api.AliasAwareCommands;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,15 @@ public final class BerryIntegrationsPlugin extends JavaPlugin {
                 getLogger().info("BlockLocker UUID 이름 연동 활성화.");
             } catch (LinkageError | RuntimeException e) { getLogger().log(Level.SEVERE, "BlockLocker 이름 연동 실패. 함께 제공한 gamparda 포크 빌드가 필요합니다.", e); }
         }
+        if (getConfig().getBoolean("coreprotect.enabled", true) && getServer().getPluginManager().isPluginEnabled("CoreProtect")) {
+            try {
+                var hook = new CoreProtectHook((JavaPlugin) getServer().getPluginManager().getPlugin("CoreProtect"),
+                        () -> getServer().getServicesManager().load(BerryNamesApi.class), getConfig().getBoolean("coreprotect.show-mapping", true));
+                hooks.add(hook);
+                getServer().getServicesManager().register(AliasAwareCommands.class, hook, this, ServicePriority.Normal);
+                getLogger().info("CoreProtect 베리 이름 명령어 연동 활성화.");
+            } catch (LinkageError | RuntimeException e) { getLogger().log(Level.SEVERE, "CoreProtect 명령어 연동 실패. CoreProtect 24.1에서 검증했습니다.", e); }
+        }
     }
 
     @Override public void onDisable() {
@@ -37,5 +48,6 @@ public final class BerryIntegrationsPlugin extends JavaPlugin {
             catch (Exception e) { getLogger().log(Level.WARNING, "이름 제공자 복구 실패", e); }
         }
         hooks.clear();
+        getServer().getServicesManager().unregisterAll(this);
     }
 }

@@ -2,3 +2,7 @@ bluemap:
   enabled: true
 blocklocker:
   enabled: true
+coreprotect:
+  enabled: true
+  # Show the Berry name -> actual account mapping before the native CoreProtect result.
+  show-mapping: true
