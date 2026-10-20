@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -44,7 +44,7 @@ final class Config {
     private final int defaultDoorOpenSeconds;
     private final String languageFile;
     private final Logger logger;
-    private final Map<ProtectionType, Set<Material>> protectableMaterialsMap;
+    private final Map<ProtectionType, MaterialSet> protectableMaterialsMap;
     /**
      * Combination of the sets of all individual protection types.
      */
@@ -77,8 +77,8 @@ final class Config {
 
         // Create combined set
         protectableMaterialsSet = new HashSet<>();
-        for (Set<Material> protectableByType : protectableMaterialsMap.values()) {
-            protectableMaterialsSet.addAll(protectableByType);
+        for (MaterialSet protectableByType : protectableMaterialsMap.values()) {
+            protectableMaterialsSet.addAll(protectableByType.getAllFlattened());
         }
 
         // Config upgrades
@@ -118,11 +118,11 @@ final class Config {
      * @param materials The materials.
      * @return The material list. Will be empty if {@code materials} is null.
      */
-    private List<String> writeMaterialSet(@Nullable Set<Material> materials) {
+    private List<String> writeMaterialSet(@Nullable MaterialSet materials) {
         if (materials == null) {
             return Collections.emptyList();
         }
-        return materials.stream().map(mat -> mat.getKey().toString()).toList();
+        return materials.toConfigStringList();
     }
 
     /**
@@ -161,7 +161,7 @@ final class Config {
      *         otherwise.
      */
     boolean canProtect(ProtectionType type, Block block) {
-        Set<Material> materials = this.protectableMaterialsMap.get(type);
+        MaterialSet materials = this.protectableMaterialsMap.get(type);
         if (materials == null) {
             return false;
         }
@@ -222,7 +222,7 @@ final class Config {
             try {
                 materials.add(AttackType.valueOf(string.toUpperCase(Locale.ROOT)));
             } catch (IllegalArgumentException e) {
-                logger.warning("Cannot recognize attack type " + string + ", ignoring it");
+                logger.warning("Cannot recognize attack type '" + string + "', ignoring it");
                 continue;
             }
         }
@@ -239,20 +239,35 @@ final class Config {
      *            The string collection.
      * @return The material set.
      */
-    private Set<Material> readMaterialSet(Collection<String> strings) {
-        Set<Material> materials = new HashSet<>();
+    private MaterialSet readMaterialSet(Collection<String> strings) {
+        MaterialSet materialSet = new MaterialSet();
         for (String string : strings) {
+            if (string.startsWith("#")) {
+                // Handle tags
+                NamespacedKey key = NamespacedKey.fromString(string.substring(1));
+                if (key == null) {
+                    logger.warning("Cannot parse tag '" + string + "', ignoring it");
+                    continue;
+                }
+                Tag<Material> tag = Bukkit.getTag("blocks", key, Material.class);
+                if (tag == null) {
+                    logger.warning("Cannot recognize tag '" + string + "', ignoring it");
+                    continue;
+                }
+                materialSet.addTag(tag);
+                continue;
+            }
             Material material = Material.matchMaterial(string);
             if (material == null) {
                 material = Material.matchMaterial(string, true);
             }
             if (material == null) {
-                logger.warning("Cannot recognize material " + string + ", ignoring it");
+                logger.warning("Cannot recognize material '" + string + "', ignoring it");
                 continue;
             }
-            materials.add(material);
+            materialSet.addMaterial(material);
         }
-        return materials;
+        return materialSet;
     }
 
     private UpdatePreference readUpdatePreference(String string) {
