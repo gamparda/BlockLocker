@@ -31,3 +31,22 @@ The forced disable/re-enable test emits Paper's expected unregistered-classloade
 warning; hot swapping is not a supported installation workflow. The BlueMap hook is
 disabled in memory for that forced cycle because Paper closes its resource loader.
 Normal restarts load all configured hooks. No real Minecraft client was used.
+
+## Inspection display fixture (1.2.0)
+
+Use `display-players.yml` with the added `gamparda` / `감파르다` / #7 identity, and
+CoreProtect's Korean language phrases. These may be obtained from the official
+CoreProtect repository's lang/ko.yml and used as the isolated server's language.yml.
+Run `build-display.ps1 -ServerRoot <isolated-server>` and install only its generated
+target/display-harness/display-harness.jar, without the older core-harness.jar.
+
+The fixture writes a grass block at (24,85,24), logs it with the original account and
+UUID, and invokes the actual native `BlockInspector.performBlockLookup` (the same
+output path used by block inspection). A Player proxy captures the outgoing native
+components. It checks the visible alias, actual UUID/account hover, vanilla grass-block
+translation key, existing Korean phrase, native command lookup, rename, CoreProtect
+reload and native renderer reset/reconnection. It also verifies unchanged stored
+identities and world blocks. A successful run writes `display-success.ok` (23 checks)
+and `display-inspect.json` / `display-lookup.json`. Restart with that marker to check
+persistence and write `display-restart.ok` (5 checks). The fixture shuts down after
+completion. Minecraft language assets and the CoreProtect binary are not redistributed.

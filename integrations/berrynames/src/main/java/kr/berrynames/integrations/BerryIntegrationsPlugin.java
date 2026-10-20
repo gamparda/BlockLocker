@@ -38,6 +38,18 @@ public final class BerryIntegrationsPlugin extends JavaPlugin {
                 hooks.add(hook);
                 getServer().getServicesManager().register(AliasAwareCommands.class, hook, this, ServicePriority.Normal);
                 getLogger().info("CoreProtect 베리 이름 명령어 연동 활성화.");
+                boolean displayNames=getConfig().getBoolean("coreprotect.display-names",true);
+                boolean translateMaterials=getConfig().getBoolean("coreprotect.translate-materials",true);
+                if(displayNames||translateMaterials) {
+                    try {
+                        hooks.add(new CoreProtectDisplayHook(this,(JavaPlugin)getServer().getPluginManager().getPlugin("CoreProtect"),
+                                ()->getServer().getServicesManager().load(BerryNamesApi.class),displayNames,translateMaterials,
+                                e->getLogger().log(Level.WARNING,"CoreProtect 결과 표시 변환 실패. 해당 결과는 원문으로 표시합니다.",e)));
+                        getLogger().info("CoreProtect 검사·조회 결과의 베리 이름 및 블록명 표시 연동 활성화.");
+                    } catch(ReflectiveOperationException|RuntimeException|LinkageError e) {
+                        getLogger().log(Level.WARNING,"CoreProtect 결과 표시 연결 실패. 명령어 이름 연동은 유지됩니다. 검증 버전은 24.1입니다.",e);
+                    }
+                }
             } catch (LinkageError | RuntimeException e) { getLogger().log(Level.SEVERE, "CoreProtect 명령어 연동 실패. CoreProtect 24.1에서 검증했습니다.", e); }
         }
     }

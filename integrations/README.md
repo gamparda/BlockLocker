@@ -1,6 +1,6 @@
 # BerryNames integration
 
-`berrynames/` builds **BerryIntegrations 1.1.0**, an optional Paper plugin integrating
+`berrynames/` builds **BerryIntegrations 1.2.0**, an optional Paper plugin integrating
 BerryNames 1.3.0+ with BlueMap 5.29, this BlockLocker fork, and CoreProtect 24.1.
 
 The addon and the BerryNames API contract in `berrynames-api/` are GPLv3; each module
@@ -21,7 +21,7 @@ mvn -B -ntp -f integrations/pom.xml verify
 Install these plugin JARs, retaining their existing data folders:
 
 - `target/blocklocker-1.15.1-berry.1.jar`
-- `integrations/berrynames/target/BerryIntegrations-1.1.0.jar`
+- `integrations/berrynames/target/BerryIntegrations-1.2.0.jar`
 - BerryNames 1.3.0+ and its PacketEvents dependency
 - BlueMap 5.29 when using the map integration
 - The existing CoreProtect 24.1 JAR when using its command integration
@@ -58,8 +58,9 @@ BlueMap, BlockLocker and CoreProtect are optional; each can be used independentl
 - The core provider reference survives `/bl reload`. BlueMap callbacks reconnect after
   BlueMap API reloads. Plugin hot swapping is not an installation workflow.
 
-The addon uses public APIs. It does not patch BlueMap, change UUIDs, write BerryNames
-data, or modify CoreProtect's JAR or database.
+Names and commands use public APIs. CoreProtect 24.1's output requires a checked
+runtime bridge to its internal renderer, as described below. The addon does not patch
+BlueMap, change UUIDs, write BerryNames data, or modify CoreProtect's JAR or database.
 
 To update from 1.0.x, replace only the BerryIntegrations JAR while the server is stopped,
 restart it, then hard-refresh the map page (Ctrl+F5). No map rerender is needed.
@@ -95,16 +96,28 @@ is rejected if its translated account collides with a native material/entity nam
 Renames are read live from BerryNames; the addon never rewrites existing CoreProtect
 records. Existing native account arguments continue to work.
 
-**Output scope:** native lookup rows and `/co inspect` still show CoreProtect's actual
-account names. There is no documented display-name provider in the installed 24.1
-API. Before an alias command, the addon shows `베리일 → ActualAccount`, keeping the
-native result and the selected Berry identity understandable. It does not replace
-inspection output, historical chat/command contents, or name-change history.
+**Inspection and lookup output:** native log rows now show the current Berry name.
+Hovering the actor reveals the real account, original UUID and Berry number. Native
+material/entity fields use Minecraft translation components, so a Korean client sees
+`grass_block` as `잔디 블록`. The client's chosen language determines material names.
+Unresolved/ambiguous actors retain their original account text. Chat/sign bodies,
+historical username values, click commands and item tooltips are preserved.
+
+The output bridge verifies CoreProtect **24.1** and its public `SpigotInterface`
+signature before wrapping the internal `SpigotAdapter.ADAPTER` field through reflection.
+It captures only timestamped log-row output from that renderer and retains CoreProtect's
+own component generation. No global chat rewriting or database/cache substitution is
+used. A renderer reset is reattached within one second. Shutdown restores the prior
+adapter only if still owned by this addon. Unsupported versions leave command aliases
+working and log a warning; output compatibility is not promised for other versions.
+The optional `베리일 → ActualAccount` command mapping line remains available.
 
 ```yaml
 coreprotect:
   enabled: true
   show-mapping: true
+  display-names: true
+  translate-materials: true
 ```
 
 These defaults apply when an existing addon config lacks this section. Set
@@ -113,6 +126,17 @@ handlers only when the addon still owns them; normal installation requires a ful
 server restart. CoreProtect's own `/co reload` retains the wrapper.
 
 ## Validation
+
+Java 25: 25 addon tests passed for 1.2.0, covering live inspection names, UUID hover,
+legacy Bungee text nodes, rollback formatting, native click/hover preservation,
+unmodified chat/history bodies, material translation and ambiguous actors. On Paper
+201 / CoreProtect 24.1, the real native BlockInspector and command lookup output
+passed 23 checks, including alias changes, native reload, renderer reset, original
+UUID/log identities and unchanged blocks. Full restart passed 5 checks. Captured
+components resolved through the installed Minecraft Korean language data display
+`감파르다이(가) 잔디 블록을(를) 설치함`. These are actual native output components;
+no manual Minecraft client session was used. See DisplayHarness.java and
+build-display.ps1 in the native validation fixture.
 
 Java 25: 17 addon tests passed for 1.1.0. New cases cover native user grammar,
 unchanged non-user filters, UUIDs/renames, duplicate identities, material collisions,

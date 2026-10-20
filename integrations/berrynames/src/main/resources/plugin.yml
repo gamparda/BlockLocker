@@ -1,5 +1,5 @@
 name: BerryIntegrations
-version: 1.1.0
+version: 1.2.0
 main: kr.berrynames.integrations.BerryIntegrationsPlugin
 api-version: '26.3'
 description: BerryNames integration for BlueMap, BlockLocker and CoreProtect

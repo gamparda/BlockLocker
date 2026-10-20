@@ -6,3 +6,7 @@ coreprotect:
   enabled: true
   # Show the Berry name -> actual account mapping before the native CoreProtect result.
   show-mapping: true
+  # Show Berry names in native inspection/lookup rows. Hover shows account and UUID.
+  display-names: true
+  # Send Minecraft translation keys for native material/entity fields.
+  translate-materials: true

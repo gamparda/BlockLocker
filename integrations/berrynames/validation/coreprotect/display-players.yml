@@ -1,0 +1,29 @@
+schema-version: 1
+next-number: 8
+players:
+  00000000-0000-4000-8000-000000000501:
+    number: 4
+    account-name: CpFirst
+    known-names: [CpFirst]
+    custom-name: 광부대장
+    first-joined: 100
+    last-joined: 100
+  00000000-0000-4000-8000-000000000502:
+    number: 5
+    account-name: CpSecond
+    known-names: [CpSecond]
+    first-joined: 200
+    last-joined: 200
+  00000000-0000-4000-8000-000000000503:
+    number: 6
+    account-name: CpAdmin
+    known-names: [CpAdmin]
+    first-joined: 300
+    last-joined: 300
+  00000000-0000-4000-8000-000000000504:
+    number: 7
+    account-name: gamparda
+    known-names: [gamparda]
+    custom-name: 감파르다
+    first-joined: 400
+    last-joined: 400

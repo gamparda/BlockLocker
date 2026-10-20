@@ -1,0 +1,5 @@
+name: BerryDisplayHarness
+version: 1.0
+main: verification.DisplayHarness
+api-version: '26.3'
+depend: [BerryNames, CoreProtect, BerryIntegrations]
