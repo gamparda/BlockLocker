@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
+import java.util.function.Supplier;
+import nl.rutgerkok.blocklocker.PlayerNameProvider;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -33,8 +35,14 @@ public final class ProfileFactoryImpl implements ProfileFactory {
     private final List<String> golemTagList;
     private final List<String> timerTagStart;
     private final Translator translator;
+    private final Supplier<PlayerNameProvider> nameProvider;
 
     public ProfileFactoryImpl(GroupSystem groupSystem, Translator translator) {
+        this(groupSystem, translator, () -> PlayerNameProvider.NONE);
+    }
+
+    public ProfileFactoryImpl(GroupSystem groupSystem, Translator translator, Supplier<PlayerNameProvider> nameProvider) {
+        this.nameProvider = java.util.Objects.requireNonNull(nameProvider);
         this.groupSystem = Preconditions.checkNotNull(groupSystem);
         this.translator = Preconditions.checkNotNull(translator);
 
@@ -111,7 +119,7 @@ public final class ProfileFactoryImpl implements ProfileFactory {
                 String name = stripped.substring(0, hashCharIndex);
                 try {
                     UUID uuid = UUID.fromString(stripped.substring(hashCharIndex + 1));
-                    return new PlayerProfileImpl(name, Optional.of(uuid));
+                    return fromNameAndUniqueId(name, Optional.of(uuid));
                 } catch (IllegalArgumentException e) {
                     // Ignore, not in name#uuid format. Someone probably added
                     // a # for some other reason
@@ -119,7 +127,7 @@ public final class ProfileFactoryImpl implements ProfileFactory {
             }
         }
 
-        return new PlayerProfileImpl(stripped, Optional.empty());
+        return fromNameAndUniqueId(stripped, Optional.empty());
     }
 
     @Override
@@ -131,6 +139,12 @@ public final class ProfileFactoryImpl implements ProfileFactory {
     public PlayerProfile fromNameAndUniqueId(String name, Optional<UUID> uuid) {
         Preconditions.checkNotNull(name, "name");
         Preconditions.checkNotNull(uuid, "uuid");
+        Optional<PlayerNameProvider.Identity> resolved = uuid.isPresent()
+                ? nameProvider.get().find(uuid.get()) : name.isEmpty() ? Optional.empty() : nameProvider.get().resolve(name);
+        if (resolved.isPresent()) {
+            var identity = resolved.get();
+            return new PlayerProfileImpl(identity.displayName(), Optional.of(identity.uuid()), identity.accountName());
+        }
         return new PlayerProfileImpl(name, uuid);
     }
 
@@ -138,7 +152,7 @@ public final class ProfileFactoryImpl implements ProfileFactory {
     public PlayerProfile fromPlayer(Player player) {
         Preconditions.checkNotNull(player);
         Optional<UUID> uuid = Optional.of(player.getUniqueId());
-        return new PlayerProfileImpl(player.getName(), uuid);
+        return fromNameAndUniqueId(player.getName(), uuid);
     }
 
     @Override
@@ -164,7 +178,9 @@ public final class ProfileFactoryImpl implements ProfileFactory {
         Optional<String> name = object.getString(PlayerProfileImpl.NAME_KEY);
         if (name.isPresent()) {
             Optional<UUID> uuid = object.getUniqueId(PlayerProfileImpl.UUID_KEY);
-            Profile profile = new PlayerProfileImpl(name.get(), uuid);
+            // Preserve exactly the saved visible name while parsing. Resolving it again
+            // after a nickname change could otherwise discard or replace the saved UUID.
+            Profile profile = new PlayerProfileImpl(name.get(), uuid, object.getString(PlayerProfileImpl.ACCOUNT_KEY).orElse(name.get()));
             return Optional.of(profile);
         }
 

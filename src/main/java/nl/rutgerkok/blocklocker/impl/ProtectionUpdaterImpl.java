@@ -33,17 +33,20 @@ public class ProtectionUpdaterImpl implements ProtectionUpdater {
     private PlayerProfile getUpdatedProfile(PlayerProfile profile) {
         if (profile.getUniqueId().isPresent()) {
            Player player = server.getPlayer(profile.getUniqueId().get());
-           if (player != null && !player.getName().equals(profile.getDisplayName())) {
-               // Found a changed name
-               return profileFactory.fromPlayer(player);
-           }
+           PlayerProfile updated = player == null
+                   ? profileFactory.fromNameAndUniqueId(profile.getAccountName(), profile.getUniqueId())
+                   : profileFactory.fromPlayer(player);
+           if (!updated.getDisplayName().equals(profile.getDisplayName())
+                   || !updated.getAccountName().equals(profile.getAccountName())) return updated;
            return null;
         } else {
             // Found a missing unique id
-            String name = profile.getDisplayName();
+            String name = profile.getAccountName();
             if (name.isEmpty()) {
                 return null; // Empty line, ignore
             }
+            PlayerProfile resolved = profileFactory.fromNameAndUniqueId(name, java.util.Optional.empty());
+            if (resolved.getUniqueId().isPresent()) return resolved;
             Player player = server.getPlayerExact(name);
             if (player == null) {
                 return null; // No player online with that name, lookup failed

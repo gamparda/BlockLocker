@@ -60,6 +60,11 @@ public final class BlockLockerCommand implements TabExecutor, Listener {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        try { return execute(sender, command, label, args); }
+        catch (IllegalArgumentException e) { sender.sendMessage(ChatColor.RED + e.getMessage()); return true; }
+    }
+
+    private boolean execute(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             return helpCommand(sender);
         }
@@ -104,18 +109,33 @@ public final class BlockLockerCommand implements TabExecutor, Listener {
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust")
                 || args[0].equalsIgnoreCase("transfer"))) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+            return playerCompletions(sender, args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("bypass")) {
             return Arrays.asList("add", "remove", "list");
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("bypass") && args[1].equalsIgnoreCase("remove")) {
-            return plugin.getBypassManager().getPlayerNames();
+            if (!sender.hasPermission(Permissions.CAN_MANAGE_BYPASS)) return List.of();
+            return plugin.getBypassManager().getPlayerNames(plugin).stream()
+                    .filter(name -> name.regionMatches(true, 0, args[2], 0, args[2].length())).toList();
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("bypass") && args[1].equalsIgnoreCase("add")) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+            return sender.hasPermission(Permissions.CAN_MANAGE_BYPASS) ? playerCompletions(sender, args[2]) : List.of();
         }
         return Collections.emptyList();
+    }
+
+    private List<String> playerCompletions(CommandSender sender, String prefix) {
+        var names = new java.util.LinkedHashSet<String>();
+        for (var identity : plugin.getPlayerNameProvider().identities()) {
+            Player online = plugin.getServer().getPlayer(identity.uuid());
+            if (online != null && sender instanceof Player viewer && !viewer.canSee(online)) continue;
+            names.add(identity.displayName()); names.add(identity.accountName()); names.addAll(identity.aliases());
+        }
+        for (Player online : plugin.getServer().getOnlinePlayers()) {
+            if (!(sender instanceof Player viewer) || viewer.canSee(online)) names.add(online.getName());
+        }
+        return names.stream().filter(name -> name.regionMatches(true, 0, prefix, 0, prefix.length())).limit(100).toList();
     }
 
     public boolean isSettingMode(Player player) {
@@ -159,6 +179,10 @@ public final class BlockLockerCommand implements TabExecutor, Listener {
             return Optional.empty();
         }
         Optional<Protection> protection = plugin.getProtectionFinder().findProtection(target);
+        if (protection.isPresent()) {
+            plugin.getProtectionUpdater().update(protection.get(), false);
+            protection = plugin.getProtectionFinder().findProtection(target);
+        }
         return protection.map(value -> new SelectedProtection(target, value));
     }
 
@@ -554,7 +578,7 @@ public final class BlockLockerCommand implements TabExecutor, Listener {
             return true;
         }
         if (args.length == 2 && args[1].equalsIgnoreCase("list")) {
-            List<String> players = plugin.getBypassManager().getPlayerNames();
+            List<String> players = plugin.getBypassManager().getPlayerNames(plugin);
             if (players.isEmpty()) {
                 sender.sendMessage(ChatColor.GOLD + "BlockLocker 보호를 우회할 수 있는 플레이어가 없습니다.");
             } else {

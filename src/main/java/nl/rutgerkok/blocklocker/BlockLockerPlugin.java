@@ -14,6 +14,12 @@ import nl.rutgerkok.blocklocker.location.CombinedLocationChecker;
  *
  */
 public interface BlockLockerPlugin {
+    /** Optional display-name integration; independent of any particular nickname plugin. */
+    default PlayerNameProvider getPlayerNameProvider() { return PlayerNameProvider.NONE; }
+
+    default void setPlayerNameProvider(PlayerNameProvider provider) {
+        throw new UnsupportedOperationException("This BlockLocker build has no player-name provider support");
+    }
 
     /**
 	 * Calls the given event, allowing other plugins to react to this event.

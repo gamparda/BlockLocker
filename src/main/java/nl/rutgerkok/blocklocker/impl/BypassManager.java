@@ -32,6 +32,12 @@ public final class BypassManager {
     }
 
     public boolean add(String playerName, BlockLockerPluginImpl plugin) {
+        var identity = plugin.getPlayerNameProvider().resolve(playerName);
+        if (identity.isPresent()) {
+            var target = identity.get();
+            legacyPlayerNames.remove(normalize(target.accountName()));
+            return !target.accountName().equals(playerNamesByUuid.put(target.uuid(), target.accountName()));
+        }
         OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(playerName);
         UUID uniqueId = offlinePlayer.getUniqueId();
         String lastKnownName = offlinePlayer.getName() == null || offlinePlayer.getName().isBlank()
@@ -51,7 +57,21 @@ public final class BypassManager {
         return names;
     }
 
+    public List<String> getPlayerNames(BlockLockerPluginImpl plugin) {
+        List<String> names = new ArrayList<>();
+        playerNamesByUuid.forEach((uuid, account) -> names.add(plugin.getPlayerNameProvider().find(uuid)
+                .map(nl.rutgerkok.blocklocker.PlayerNameProvider.Identity::displayName).orElse(account)));
+        names.addAll(legacyPlayerNames);
+        return names;
+    }
+
     public boolean remove(String playerName, BlockLockerPluginImpl plugin) {
+        var identity = plugin.getPlayerNameProvider().resolve(playerName);
+        if (identity.isPresent()) {
+            var target = identity.get();
+            boolean changed = legacyPlayerNames.remove(normalize(target.accountName()));
+            return (playerNamesByUuid.remove(target.uuid()) != null) || changed;
+        }
         boolean changed = legacyPlayerNames.remove(normalize(playerName));
 
         Player onlinePlayer = plugin.getServer().getPlayerExact(playerName);

@@ -1,6 +1,17 @@
 BlockLocker
 ===========
 
+베리 이름 연동 업데이트
+----------------------
+
+gamparda 포크의 기존 신뢰 목록·소유권 이전·설정 GUI·한국어 문구·우회 목록·보호 수정 사항을 유지하면서
+원본 `25b6224`(1.15.1-SNAPSHOT)까지 병합했습니다. 블록 태그 설정 지원도 포함됩니다.
+배포 버전은 `1.15.1-berry.1`이며 Paper 26.3 build 201 / Java 25 기준입니다.
+
+[BerryIntegrations 연동 안내](integrations/README.md)를 따라 별도 애드온을 설치하면 BerryNames 1.3.0 이상의
+이름을 표지판·trust/untrust/transfer/bypass 명령·자동완성과 BlueMap 5.29의 플레이어 표시에서 사용할 수 있습니다.
+BlockLocker 단독 사용도 가능합니다. 업데이트할 때 기존 설정 파일과 월드 데이터는 유지하세요.
+
 표지판으로 Minecraft의 개별 블록(상자 등)을 잠그는 플러그인입니다.
 
 주요 기능

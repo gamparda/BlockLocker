@@ -1,0 +1,7 @@
+name: BerryIntegrations
+version: 1.0.0
+main: kr.berrynames.integrations.BerryIntegrationsPlugin
+api-version: '26.3'
+description: BerryNames UUID integration for BlueMap and the gamparda BlockLocker fork
+depend: [BerryNames]
+softdepend: [BlueMap, BlockLocker]

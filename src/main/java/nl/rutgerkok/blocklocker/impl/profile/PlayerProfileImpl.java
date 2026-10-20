@@ -16,12 +16,19 @@ class PlayerProfileImpl implements PlayerProfile {
 
     static final String NAME_KEY = "n";
     static final String UUID_KEY = "u";
+    static final String ACCOUNT_KEY = "a";
     private String displayName;
+    private final String accountName;
     private final Optional<UUID> uuid;
 
     PlayerProfileImpl(String displayName, Optional<UUID> uuid) {
+        this(displayName, uuid, displayName);
+    }
+
+    PlayerProfileImpl(String displayName, Optional<UUID> uuid, String accountName) {
         this.displayName = displayName;
         this.uuid = uuid;
+        this.accountName = accountName;
     }
 
     /**
@@ -58,11 +65,14 @@ class PlayerProfileImpl implements PlayerProfile {
         return displayName;
     }
 
+    @Override public String getAccountName() { return accountName; }
+
     @Override
     public void getSaveObject(SecretSignEntry entry) {
         entry.setString(NAME_KEY, displayName);
         if (uuid.isPresent()) {
             entry.setUniqueId(UUID_KEY, uuid.get());
+            entry.setString(ACCOUNT_KEY, accountName);
         }
     }
 
@@ -89,7 +99,7 @@ class PlayerProfileImpl implements PlayerProfile {
         if (uuid.isPresent()) {
             return uuid.equals(otherProfile.getUniqueId());
         }
-        return displayName.equalsIgnoreCase(otherProfile.getDisplayName());
+        return accountName.equalsIgnoreCase(otherProfile.getAccountName());
     }
 
     @Override

@@ -42,6 +42,12 @@ import nl.rutgerkok.blocklocker.location.CombinedLocationChecker;
 import nl.rutgerkok.blocklocker.location.LocationChecker;
 
 public class BlockLockerPluginImpl extends JavaPlugin implements BlockLockerPlugin {
+    private volatile PlayerNameProvider playerNameProvider = PlayerNameProvider.NONE;
+
+    @Override public PlayerNameProvider getPlayerNameProvider() { return playerNameProvider; }
+    @Override public void setPlayerNameProvider(PlayerNameProvider provider) {
+        playerNameProvider = java.util.Objects.requireNonNull(provider, "provider");
+    }
 
     private ChestSettings chestSettings;
     private CombinedGroupSystem combinedGroupSystem;
@@ -199,7 +205,7 @@ public class BlockLockerPluginImpl extends JavaPlugin implements BlockLockerPlug
         translator = loadTranslations(config.getLanguageFileName());
 
         // Parsers and finders
-        profileFactory = new ProfileFactoryImpl(combinedGroupSystem, translator);
+        profileFactory = new ProfileFactoryImpl(combinedGroupSystem, translator, this::getPlayerNameProvider);
         chestSettings = new ChestSettingsImpl(translator, config);
         chestSettings.getExtraProtectables().add(new UniversalProtectableBlocksSettings());
         signParser = new SignParserImpl(chestSettings, profileFactory);

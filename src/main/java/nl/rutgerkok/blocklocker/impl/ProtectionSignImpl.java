@@ -29,7 +29,7 @@ final class ProtectionSignImpl implements ProtectionSign {
         if (profiles.isEmpty() || profiles.size() > MAX_PROFILES) {
             throw new IllegalArgumentException("Invalid size for profiles collection: " + profiles);
         }
-        if (profiles.indexOf(null) != -1) {
+        if (profiles.stream().anyMatch(java.util.Objects::isNull)) {
             throw new IllegalArgumentException("Profiles list contains null profile: " + profiles);
         }
     }

@@ -55,6 +55,11 @@ public final class ProtectionAccessList {
     }
 
     public static boolean isSameProfile(Profile first, Profile second) {
+        if (first instanceof nl.rutgerkok.blocklocker.profile.PlayerProfile a
+                && second instanceof nl.rutgerkok.blocklocker.profile.PlayerProfile b
+                && a.getUniqueId().isPresent() && b.getUniqueId().isPresent()) {
+            return a.getUniqueId().equals(b.getUniqueId());
+        }
         return first.includes(second) || second.includes(first)
                 || first.getDisplayName().equalsIgnoreCase(second.getDisplayName());
     }
