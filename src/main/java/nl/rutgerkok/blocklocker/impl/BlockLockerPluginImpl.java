@@ -1,5 +1,7 @@
 package nl.rutgerkok.blocklocker.impl;
 
+import nl.rutgerkok.blocklocker.impl.recovery.RecoveryYaml;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -188,13 +190,14 @@ public class BlockLockerPluginImpl extends JavaPlugin implements BlockLockerPlug
     }
 
     private void loadServices() {
+        RecoveryYaml.config(this);
         // Scheduler
         schedulerSupport = new SchedulerSupport(this);
         containerSettingsManager = new ContainerSettingsManager(this);
         bypassManager = new BypassManager(this);
 
         // Configuration
-        saveDefaultConfig();
+        RecoveryYaml.config(this); saveDefaultConfig();
         config = new Config(this);
 
         // Connections with external systems
@@ -217,7 +220,7 @@ public class BlockLockerPluginImpl extends JavaPlugin implements BlockLockerPlug
 
     private Translator loadTranslations(String fileName) {
         File file = new File(getDataFolder(), fileName);
-        Configuration config = YamlConfiguration.loadConfiguration(file);
+        Configuration config = RecoveryYaml.config(this,fileName,getJarConfig(fileName).isPresent()?fileName:Config.DEFAULT_TRANSLATIONS_FILE);
         Optional<Configuration> defaultsForLanguage = getJarConfig(fileName);
         if (defaultsForLanguage.isPresent()) {
             config.addDefaults(defaultsForLanguage.get());
@@ -290,7 +293,7 @@ public class BlockLockerPluginImpl extends JavaPlugin implements BlockLockerPlug
         Collection<LocationChecker> keepLocationCheckers = this.combinedLocationChecker.getReloadSurvivors();
         Collection<ProtectableBlocksSettings> keepProtectables = this.chestSettings.getExtraProtectables();
 
-        reloadConfig();
+        RecoveryYaml.config(this); reloadConfig();
         loadServices();
 
         // Add back external systems from before the reload

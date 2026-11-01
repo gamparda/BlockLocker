@@ -1,4 +1,5 @@
 package nl.rutgerkok.blocklocker.impl;
+import nl.rutgerkok.blocklocker.impl.recovery.RecoveryYaml;
 
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
@@ -108,7 +109,7 @@ public final class BypassManager {
             config.set("legacyPlayerNames", new ArrayList<>(legacyPlayerNames));
         }
         try {
-            config.save(file);
+            RecoveryYaml.write(file.toPath(),config.saveToString(),plugin.getLogger()::warning);
         } catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to save bypass.yml", e);
         }
@@ -117,10 +118,9 @@ public final class BypassManager {
     private void load(BlockLockerPluginImpl plugin) {
         playerNamesByUuid.clear();
         legacyPlayerNames.clear();
-        if (!file.exists()) {
-            return;
-        }
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration config;
+        try{config=RecoveryYaml.data(file.toPath(),BypassManager::normalize,plugin.getLogger()::warning);}
+        catch(IOException e){throw new IllegalStateException("bypass.yml 복구 실패",e);}
         List<?> players = config.getList("players", List.of());
         for (Object playerEntry : players) {
             if (playerEntry instanceof String playerName) {
@@ -171,4 +171,19 @@ public final class BypassManager {
     private String normalize(String playerName) {
         return playerName.toLowerCase(Locale.ROOT);
     }
+    private static boolean normalize(YamlConfiguration yaml) {
+        String before=yaml.saveToString();Object raw=yaml.get("players");
+        if(raw!=null&&!(raw instanceof List<?>)&&!yaml.isConfigurationSection("players"))yaml.set("players",List.of());
+        if(raw instanceof List<?> list) {
+            var valid=new ArrayList<Object>();
+            for(Object item:list) {
+                if(item instanceof String name&&!name.isBlank())valid.add(name);
+                else if(item instanceof Map<?,?> map&&map.get("uuid") instanceof String uuid&&RecoveryYaml.uuid(uuid)&&map.get("lastKnownName") instanceof String)valid.add(map);
+            }
+            yaml.set("players",valid);
+        }
+        if(yaml.get("legacyPlayerNames")!=null&&!(yaml.get("legacyPlayerNames") instanceof List<?>))yaml.set("legacyPlayerNames",List.of());
+        return !before.equals(yaml.saveToString());
+    }
+
 }
