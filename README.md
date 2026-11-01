@@ -108,6 +108,10 @@ private boolean isRedstoneAllowed(Block block) {
 }
 ```
 
+## 잠금 표지판 (1.15.1-berry.3)
+
+영어 번역 파일(`translations-en.yml`)의 보호 표지판 머리말 기본값이 `[잠금]`입니다. 기존 `[Private]` 표지판도 계속 인식합니다.
+
 ## 파일 자동 초기화 (1.15.1-berry.2)
 
 누락된 파일만 기본값으로 재생성하며, 자동 복구용 백업을 생성하거나 이전 내용에서 복원하지 않습니다. 자세한 정책은 [AUTOMATIC-FILES.md](AUTOMATIC-FILES.md)를 참고하세요.

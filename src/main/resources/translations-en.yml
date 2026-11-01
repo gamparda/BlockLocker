@@ -10,9 +10,9 @@ command:
   sign_no_longer_part_of_protection: "&4The selected sign no longer belongs to a protected block."
   updated_sign: "&6Updated the sign!"
 protection:
-  add_more_users_sign_instead: "&4There can only be one [Private] sign on a protection. Add a [More Users] sign instead."
+  add_more_users_sign_instead: "&4There can only be one [잠금] sign on a protection. Add a [More Users] sign instead."
   bypassed: "&6You have just bypassed a protection of {0}."
-  can_only_add_protection_sign: "&4There can only be one [Private] and zero or more [More Users] signs on a protection. Other signs are not allowed."
+  can_only_add_protection_sign: "&4There can only be one [잠금] and zero or more [More Users] signs on a protection. Other signs are not allowed."
   cannot_change_sign: "&4You cannot change a sign nearby a claimed container."
   chest_hint: "&6Place a sign on this chest to protect it."
   claimed_container: "&6Claimed this container. Nobody else can access it."
@@ -30,7 +30,10 @@ tag:
   golem:
     - Golem
     - Golems
-  private: "[Private]"
+  # The first value is written on new signs; the others still work on existing signs.
+  private:
+    - "[잠금]"
+    - "[Private]"
   more_users: "[More Users]"
 updater:
   more_information: "&6More information: {0}"
