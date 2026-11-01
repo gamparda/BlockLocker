@@ -108,9 +108,9 @@ private boolean isRedstoneAllowed(Block block) {
 }
 ```
 
-## 잠금 표지판 (1.15.1-berry.3)
+## 잠금 표지판 (1.15.1-berry.4)
 
-영어 번역 파일(`translations-en.yml`)의 보호 표지판 머리말 기본값이 `[잠금]`입니다. 기존 `[Private]` 표지판도 계속 인식합니다.
+한국어(`translations-kr.yml`, 기본값)와 영어 번역 파일 모두 보호 표지판 머리말 기본값이 `[잠금]`입니다. 기존 `[개인]`·`[Private]` 표지판도 계속 인식합니다.
 
 ## 파일 자동 초기화 (1.15.1-berry.2)
 

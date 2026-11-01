@@ -10,9 +10,9 @@ command:
   sign_no_longer_part_of_protection: "&4선택한 표지판은 더 이상 보호된 블록에 속해 있지 않습니다."
   updated_sign: "&6표지판을 업데이트했습니다!"
 protection:
-  add_more_users_sign_instead: "&4하나의 보호에는 [개인] 표지판을 하나만 사용할 수 있습니다. 대신 [추가 사용자] 표지판을 추가하세요."
+  add_more_users_sign_instead: "&4하나의 보호에는 [잠금] 표지판을 하나만 사용할 수 있습니다. 대신 [추가 사용자] 표지판을 추가하세요."
   bypassed: "&6{0}의 보호를 우회했습니다."
-  can_only_add_protection_sign: "&4하나의 보호에는 [개인] 표지판 하나와 [추가 사용자] 표지판만 추가할 수 있습니다. 다른 표지판은 허용되지 않습니다."
+  can_only_add_protection_sign: "&4하나의 보호에는 [잠금] 표지판 하나와 [추가 사용자] 표지판만 추가할 수 있습니다. 다른 표지판은 허용되지 않습니다."
   cannot_change_sign: "&4보호된 컨테이너 근처의 표지판은 변경할 수 없습니다."
   chest_hint: "&6이 상자에 표지판을 붙이면 보호할 수 있습니다."
   claimed_container: "&6이 컨테이너를 보호했습니다. 다른 플레이어는 접근할 수 없습니다."
@@ -23,7 +23,7 @@ protection:
   no_access: "&4이 블록은 {0}의 보호를 받고 있어 사용할 수 없습니다."
   no_permission_for_claim: "&4컨테이너를 보호할 권한이 없습니다."
   not_nearby: "&4근처에 보호할 수 있는 블록이 없습니다. 표지판을 들고 컨테이너를 (Shift+)우클릭하면 보호할 수 있습니다."
-  selected_sign: "&6표지판을 선택했습니다. 수정하려면 /blocklocker <줄 번호> <닉네임> 을 입력하세요. [Redstone], [Everyone] 같은 태그도 추가할 수 있습니다."
+  selected_sign: "&6표지판을 선택했습니다. 수정하려면 /blocklocker <줄 번호> <닉네임> 을 입력하세요. 레드스톤, 모두 같은 태그도 추가할 수 있습니다."
 tag:
   everyone:
     - "모두"
@@ -34,7 +34,9 @@ tag:
   redstone:
     - "레드스톤"
     - "Redstone"
+  # 첫 번째 값이 새 표지판에 적히고, 나머지는 기존 표지판에서도 계속 인식합니다.
   private:
+    - "[잠금]"
     - "[개인]"
     - "[Private]"
   more_users:
